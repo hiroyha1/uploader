@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+</head>
+<body>
+    <div id="app">
+        <v-app>
+            <v-main>
+                <v-container>
+                    <v-row>
+                        <v-col cols="12">
+                            <v-card class="mx-auto">
+                                <v-card-title>Settings</v-card-title>
+
+                                <v-card-text>
+                                    <v-text-field label="Base URL: E.g. http://127.0.0.1:8080"
+                                    v-model="baseUrl"
+                                    :rules="rules"
+                                    hide-details="auto"></v-text-field>
+                                </v-card-text>
+
+                                <v-card-text>
+                                    <v-list>
+                                        <v-list-item-content>
+                                            <v-list-item-title>Swagger UI</v-list-item-title>
+                                            <v-list-item-subtitle>
+                                                <a color="deep-purple accent-4"
+                                                   :href="swaggerUrl"
+                                                   target="_blank"
+                                                   v-text="swaggerUrl"></a>
+                                            </v-list-item-subtitle>
+                                        </v-list-item-content>
+                                    </v-list>
+                                </v-card-text>
+
+                                <v-divider class="mx-4"></v-divider>
+
+                                <v-card-title>Health Check</v-card-title>
+
+                                <v-card-text>
+                                    <v-list>
+                                        <v-list-item-content>
+                                            <v-list-item-title>URL</v-list-item-title>
+                                            <v-list-item-subtitle v-text="healthUrl"></v-list-item-subtitle>
+                                        </v-list-item-content>
+                                        <v-list-item-content>
+                                            <v-list-item-title>Status</v-list-item-title>
+                                            <v-list-item-subtitle v-text="healthStatusCode"></v-list-item-subtitle>
+                                        </v-list-item-content>
+                                        <v-list-item-content>
+                                            <v-list-item-title>Headers</v-list-item-title>
+                                            <v-list-item-subtitle v-text="healthResponseHeaders"></v-list-item-subtitle>
+                                        </v-list-item-content>
+                                        <v-list-item-content>
+                                            <v-list-item-title>Result</v-list-item-title>
+                                            <v-list-item-subtitle v-text="healthResult"></v-list-item-subtitle>
+                                        </v-list-item-content>
+                                    </v-list>
+                                </v-card-text>
+
+                                <v-card-actions>
+                                    <v-btn text
+                                        color="deep-purple accent-4"
+                                        @click="getStatus">
+                                        Send
+                                    </v-btn>
+                                </v-card-actions>
+                            </v-card>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </v-main>
+        </v-app>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            vuetify: new Vuetify(),
+            data: () => ({
+                baseUrl: 'http://127.0.0.1:8080',
+                healthResult: '',
+                healthStatusCode: '',
+                healthResponseHeaders: '',
+                rules: [
+                    value => !!value || 'Required.',
+                    value => (value && (value.startsWith("http://") || value.startsWith("https://"))) || 'Invalid URL.'
+                ]
+            }),
+            computed: {
+                healthUrl: function () {
+                    return this.baseUrl + '/api/actuator/health';
+                },
+                swaggerUrl: function () {
+                    return this.baseUrl + '/api/swagger-ui.html';
+                }
+            },
+            methods: {
+                getStatus: function () {
+                    axios.get(this.healthUrl)
+                        .then((response) => {
+                            this.healthStatusCode = response.status;
+                            this.healthResponseHeaders = JSON.stringify(response.headers, null, "  ");
+                            this.healthResult = JSON.stringify(response.data, null, "  ");
+                        });
+                },
+                swaggerUI: function () {
+                    window.open(this.swaggerUrl, "_blank");
+                }
+            }
+        })
+    </script>
+</body>
+</html>
