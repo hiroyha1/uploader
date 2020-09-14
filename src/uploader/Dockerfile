@@ -14,4 +14,4 @@ ADD https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.0.
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar", "-javaagent:applicationinsights-agent-3.0.0-PREVIEW.5.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar", "-javaagent:/app/applicationinsights-agent-3.0.0-PREVIEW.5.jar"]
