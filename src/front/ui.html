@@ -4,7 +4,19 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/vue-prism-editor/dist/prismeditor.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/prismjs/themes/prism.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <style>
+        .code-editor {
+            color: #ccc;
+            background: #2d2d2d;
+            font-family: Fira code, Fira Mono, Consolas, Menlo, Courier, monospace;
+        }
+        .prism-editor__textarea:focus {
+            outline: none;
+        }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -53,11 +65,17 @@
                                         </v-list-item-content>
                                         <v-list-item-content>
                                             <v-list-item-title>Headers</v-list-item-title>
-                                            <v-list-item-subtitle v-text="healthResponseHeaders"></v-list-item-subtitle>
+                                            <prism-editor v-model="healthResponseHeaders"
+                                                          :highlight="highlighter"
+                                                          readonly
+                                                          line-numbers></prism-editor>
                                         </v-list-item-content>
                                         <v-list-item-content>
                                             <v-list-item-title>Result</v-list-item-title>
-                                            <v-list-item-subtitle v-text="healthResult"></v-list-item-subtitle>
+                                            <prism-editor v-model="healthResult"
+                                                          :highlight="highlighter"
+                                                          readonly
+                                                          line-numbers></prism-editor>
                                         </v-list-item-content>
                                     </v-list>
                                 </v-card-text>
@@ -94,11 +112,17 @@
                                         </v-list-item-content>
                                         <v-list-item-content>
                                             <v-list-item-title>Headers</v-list-item-title>
-                                            <v-list-item-subtitle v-text="uploadResponseHeaders"></v-list-item-subtitle>
+                                            <prism-editor v-model="uploadResponseHeaders"
+                                                          :highlight="highlighter"
+                                                          readonly
+                                                          line-numbers></prism-editor>
                                         </v-list-item-content>
                                         <v-list-item-content>
                                             <v-list-item-title>Result</v-list-item-title>
-                                            <v-list-item-subtitle v-text="uploadResult"></v-list-item-subtitle>
+                                            <prism-editor v-model="uploadResult"
+                                                          :highlight="highlighter"
+                                                          readonly
+                                                          line-numbers></prism-editor>
                                         </v-list-item-content>
                                     </v-list>
                                 </v-card-text>
@@ -113,6 +137,31 @@
                                         Send
                                     </v-btn>
                                 </v-card-actions>
+
+                                <v-divider class="mx-4"></v-divider>
+
+                                <v-card-title>File Download</v-card-title>
+
+                                <v-card-text>
+                                    <v-text-field label="Blob Name: E.g. 0200914_184403.dat"
+                                                  v-model="blobName"
+                                                  hide-details="auto"></v-text-field>
+                                </v-card-text>
+                                <v-card-text>
+                                    <v-list-item-content>
+                                        <v-list-item-title>URL</v-list-item-title>
+                                        <v-list-item-subtitle v-text="downloadUrl"></v-list-item-subtitle>
+                                    </v-list-item-content>
+                                </v-card-text>
+
+                                <v-card-actions>
+                                    <v-btn tile
+                                           class="ma-2"
+                                           color="info"
+                                           @click="download">
+                                        Download
+                                    </v-btn>
+                                </v-card-actions>
                             </v-card>
                         </v-col>
                     </v-row>
@@ -124,6 +173,8 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue-prism-editor"></script>
+    <script src="https://unpkg.com/prismjs/prism.js"></script>
     <script>
         new Vue({
             el: '#app',
@@ -139,6 +190,7 @@
                 uploadResponseHeaders: '',
                 uploadFile: null,
                 uploadLoading: false,
+                blobName: '',
                 rules: [
                     value => !!value || 'Required.',
                     value => (value && (value.startsWith("http://") || value.startsWith("https://"))) || 'Invalid URL.'
@@ -153,6 +205,9 @@
                 },
                 swaggerUrl: function () {
                     return this.baseUrl + '/api/swagger-ui.html';
+                },
+                downloadUrl: function () {
+                    return this.baseUrl + '/api/download/' + this.blobName;
                 }
             },
             methods: {
@@ -161,12 +216,12 @@
                     axios.get(this.healthUrl)
                         .then(response => {
                             this.healthStatusCode = response.status;
-                            this.healthResponseHeaders = JSON.stringify(response.headers, null, "  ");
-                            this.healthResult = JSON.stringify(response.data, null, "  ");
+                            this.healthResponseHeaders = JSON.stringify(response.headers, null, 4);
+                            this.healthResult = JSON.stringify(response.data, null, 4);
                             this.healthLoading = false;
                         })
                         .catch(err => {
-                            this.healthResult = err;
+                            this.healthResult = JSON.stringify(err, null, 4);
                             this.healthLoading = false;
                         });
                 },
@@ -177,17 +232,24 @@
                     axios.post(this.uploadUrl, data)
                         .then(response => {
                             this.uploadStatusCode = response.status;
-                            this.uploadResponseHeaders = JSON.stringify(response.headers, null, "  ");
-                            this.uploadResult = JSON.stringify(response.data, null, "  ");
+                            this.uploadResponseHeaders = JSON.stringify(response.headers, null, 4);
+                            this.uploadResult = JSON.stringify(response.data, null, 4);
+                            this.blobName = response.data.blobName;
                             this.uploadLoading = false;
                         })
                         .catch(err => {
-                            this.uploadResult = err;
+                            this.uploadResult = JSON.stringify(err, null, 4);
                             this.uploadLoading = false;
                         });
                 },
                 swaggerUI: function () {
                     window.open(this.swaggerUrl, "_blank");
+                },
+                highlighter: function (code) {
+                    return Prism.highlight(code, Prism.languages.js, 'js');
+                },
+                download: function () {
+                    window.open(this.downloadUrl, "_blank");
                 }
             }
         })

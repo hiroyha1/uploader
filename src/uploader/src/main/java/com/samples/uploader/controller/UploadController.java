@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 
+import com.samples.uploader.dto.DataFileDto;
 import com.samples.uploader.service.BlobService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,12 +34,13 @@ public class UploadController {
     }
 
     @RequestMapping(consumes={"multipart/form-data"}, method=RequestMethod.POST)
-    public void post(@RequestParam("file") MultipartFile file) {
+    public DataFileDto post(@RequestParam("file") MultipartFile file) {
         try {
             InputStream data = file.getInputStream();
             long length = file.getSize();
             String blobName = generateBlobName();
-            blobService.upload(CONTANER_NAME, blobName, data, length);
+            DataFileDto dataFile = blobService.upload(CONTANER_NAME, blobName, data, length);
+            return dataFile;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
