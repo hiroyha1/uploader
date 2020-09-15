@@ -31,7 +31,13 @@
                                 <v-card-text>
                                     <v-text-field label="Base URL: E.g. http://127.0.0.1:8080"
                                                   v-model="baseUrl"
-                                                  :rules="rules"
+                                                  :rules="urlRules"
+                                                  hide-details="auto"></v-text-field>
+                                </v-card-text>
+
+                                <v-card-text>
+                                    <v-text-field label="Ocp-Apim-Subscription-Key: (Option)"
+                                                  v-model="subscriptionKey"
                                                   hide-details="auto"></v-text-field>
                                 </v-card-text>
 
@@ -130,8 +136,8 @@
                                 <v-card-actions>
                                     <v-btn tile
                                            class="ma-2"
-                                           :loading="uploadLoading"
-                                           :disabled="uploadLoading"
+                                           :loading="uploading"
+                                           :disabled="uploading"
                                            color="info"
                                            @click="upload">
                                         Send
@@ -151,6 +157,24 @@
                                     <v-list-item-content>
                                         <v-list-item-title>URL</v-list-item-title>
                                         <v-list-item-subtitle v-text="downloadUrl"></v-list-item-subtitle>
+                                    </v-list-item-content>
+                                    <v-list-item-content>
+                                        <v-list-item-title>Status</v-list-item-title>
+                                        <v-list-item-subtitle v-text="downloadStatusCode"></v-list-item-subtitle>
+                                    </v-list-item-content>
+                                    <v-list-item-content>
+                                        <v-list-item-title>Headers</v-list-item-title>
+                                        <prism-editor v-model="downloadResponseHeaders"
+                                                      :highlight="highlighter"
+                                                      readonly
+                                                      line-numbers></prism-editor>
+                                    </v-list-item-content>
+                                    <v-list-item-content>
+                                        <v-list-item-title>Result</v-list-item-title>
+                                        <prism-editor v-model="downloadResult"
+                                                      :highlight="highlighter"
+                                                      readonly
+                                                      line-numbers></prism-editor>
                                     </v-list-item-content>
                                 </v-card-text>
 
@@ -180,7 +204,7 @@
             el: '#app',
             vuetify: new Vuetify(),
             data: () => ({
-                baseUrl: 'http://127.0.0.1:8080',
+                baseUrl: 'http://127.0.0.1:8080/api',
                 healthResult: '',
                 healthStatusCode: '',
                 healthResponseHeaders: '',
@@ -189,31 +213,44 @@
                 uploadStatusCode: '',
                 uploadResponseHeaders: '',
                 uploadFile: null,
-                uploadLoading: false,
+                uploading: false,
+                downloadResult: '',
+                downloadStatusCode: '',
+                downloadResponseHeaders: '',
+                downloading: false,
                 blobName: '',
-                rules: [
+                subscriptionKey: '',
+                urlRules: [
                     value => !!value || 'Required.',
                     value => (value && (value.startsWith("http://") || value.startsWith("https://"))) || 'Invalid URL.'
                 ]
             }),
             computed: {
                 healthUrl: function () {
-                    return this.baseUrl + '/api/actuator/health';
+                    return this.baseUrl + '/actuator/health';
                 },
                 uploadUrl: function () {
-                    return this.baseUrl + '/api/upload';
+                    return this.baseUrl + '/upload';
                 },
                 swaggerUrl: function () {
-                    return this.baseUrl + '/api/swagger-ui.html';
+                    return this.baseUrl + '/swagger-ui.html';
                 },
                 downloadUrl: function () {
-                    return this.baseUrl + '/api/download/' + this.blobName;
+                    return this.baseUrl + '/download/' + this.blobName;
                 }
             },
             methods: {
+                getHeaders: function () {
+                    let headers = {};
+                    if (this.subscriptionKey) {
+                        headers['Ocp-Apim-Subscription-Key'] = this.subscriptionKey;
+                    }
+                    return headers;
+                },
                 getStatus: function () {
                     this.healthLoading = true;
-                    axios.get(this.healthUrl)
+                    const headers = this.getHeaders();
+                    axios.get(this.healthUrl, { headers: headers })
                         .then(response => {
                             this.healthStatusCode = response.status;
                             this.healthResponseHeaders = JSON.stringify(response.headers, null, 4);
@@ -226,30 +263,48 @@
                         });
                 },
                 upload: function () {
-                    this.uploadLoading = true;
+                    this.uploading = true;
+                    const headers = this.getHeaders();
                     const data = new FormData();
                     data.append('file', this.uploadFile);
-                    axios.post(this.uploadUrl, data)
+                    axios.post(this.uploadUrl, data, { headers: headers })
                         .then(response => {
                             this.uploadStatusCode = response.status;
                             this.uploadResponseHeaders = JSON.stringify(response.headers, null, 4);
                             this.uploadResult = JSON.stringify(response.data, null, 4);
                             this.blobName = response.data.blobName;
-                            this.uploadLoading = false;
+                            this.uploading = false;
                         })
                         .catch(err => {
                             this.uploadResult = JSON.stringify(err, null, 4);
-                            this.uploadLoading = false;
+                            this.uploading = false;
                         });
+                },
+                download: function () {
+                    this.downloading = true;
+                    const headers = this.getHeaders();
+                    axios.get(this.downloadUrl, { headers: headers })
+                         .then(response => {
+                            this.downloadStatusCode = response.status;
+                            this.downloadResponseHeaders = JSON.stringify(response.headers, null, 4);
+                            const fileUrl = window.URL.createObjectURL(new Blob([response.data]));
+                            const fileLink = document.createElement('a');
+                            fileLink.href = fileUrl;
+                            fileLink.setAttribute('download', this.blobName);
+                            document.body.appendChild(fileLink);
+                            this.downloading = false;
+                            fileLink.click();
+                         })
+                         .catch(err => {
+                            this.downloadResult = JSON.stringify(err, null, 4);
+                            this.downloading = false;
+                         });
                 },
                 swaggerUI: function () {
                     window.open(this.swaggerUrl, "_blank");
                 },
                 highlighter: function (code) {
                     return Prism.highlight(code, Prism.languages.js, 'js');
-                },
-                download: function () {
-                    window.open(this.downloadUrl, "_blank");
                 }
             }
         })
