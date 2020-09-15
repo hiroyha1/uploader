@@ -17,9 +17,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @CrossOrigin
 @RestController
 @RequestMapping("upload")
+@Tag(name = "Uploader", description = "File upload API")
 public class UploadController {
     private final static SimpleDateFormat DF = new SimpleDateFormat("yyyyMMdd_HHmmss");
     private final static String CONTANER_NAME = System.getenv("STORAGE_CONTAINER_NAME");
@@ -34,6 +38,7 @@ public class UploadController {
     }
 
     @RequestMapping(consumes={"multipart/form-data"}, method=RequestMethod.POST)
+    @Operation(summary = "Upload file", tags = { "uploader" })
     public DataFileDto post(@RequestParam("file") MultipartFile file) {
         try {
             InputStream data = file.getInputStream();

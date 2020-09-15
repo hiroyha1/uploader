@@ -1,0 +1,16 @@
+{
+  "instrumentationSettings": {
+    "preview": {
+      "instrumentation": {
+        "logging": {
+          "threshold": "DEBUG"
+        }
+      },
+      "selfDiagnostics": {
+        "destination": "console",
+        "level": "DEBUG"
+      }
+    }
+  }
+}
+
