@@ -25,6 +25,7 @@ public class LoggingAspect {
 
     @Pointcut("within(com.samples.uploader..*)" +
         " || within(com.samples.uploader.service..*)" +
+        " || within(com.samples.uploader.repository..*)" +
         " || within(com.samples.uploader.controller..*)")
     public void applicationPackagePointcut() {
     }

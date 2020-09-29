@@ -1,0 +1,18 @@
+{
+    "instrumentationSettings": {
+        "preview": {
+            "roleName": "uploader",
+            "instrumenation": {
+                "logging": {
+                    "threshold": "WARN"
+                },
+                "micrometer": {
+                    "enabled": true
+                },
+                "heartbeat": {
+                    "intervalSeconds": 15
+                }
+            }
+        }
+    }
+}

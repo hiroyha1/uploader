@@ -4,8 +4,20 @@ plugins {
 	id 'java'
 }
 
+def getVersionName = {
+	def stdout = new ByteArrayOutputStream()
+	exec {
+		commandLine 'git', 'describe', '--tags'
+		standardOutput = stdout
+	}
+	def ret = stdout.toString().trim()
+	ret = ret.replaceFirst(/v([0-9]+\.[0-9]+\.[0-9]+)/, "\$1")
+	ret = ret + (ret.matches(".*-[0-9]-g[0-9a-f]{7}") ? "-SNAPSHOT" : "")
+	return ret
+}
+
 group = 'com.samples'
-version = '0.0.1-SNAPSHOT'
+version = getVersionName()
 sourceCompatibility = '11'
 
 configurations {
@@ -35,4 +47,10 @@ dependencies {
 
 test {
 	useJUnitPlatform()
+}
+
+task showVersion {
+	doLast {
+		println version
+	}
 }
