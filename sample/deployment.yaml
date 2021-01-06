@@ -15,7 +15,7 @@ spec:
             run: uploader
       spec:
           containers:
-            - image: acr.azurecr.io/uploader:v1
+            - image: hiroyha/uploader:version-0.0.7
               name: uploader
               env:
               - name: STORAGE_CONNECTION_STRING
