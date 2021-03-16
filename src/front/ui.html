@@ -283,7 +283,7 @@
                 download: function () {
                     this.downloading = true;
                     const headers = this.getHeaders();
-                    axios.get(this.downloadUrl, { headers: headers })
+                    axios.get(this.downloadUrl, { headers: headers, responseType: 'blob' })
                          .then(response => {
                             this.downloadStatusCode = response.status;
                             this.downloadResponseHeaders = JSON.stringify(response.headers, null, 4);
